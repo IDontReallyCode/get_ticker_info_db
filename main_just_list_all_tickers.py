@@ -20,17 +20,18 @@ Example:
     The list contains all tickers of any options traded on CBOE between 2012 and 2022.
     Because of corporate actions, such as stock splits, some option series use a variation of the ticker name.
     For example, ZZZ, and ZZZ1
+    In that case, I extract the original ticker and only store that one.
     
-    The standard for index tickers is different also. So I may need to "eff around to find out".
+    The standard for index tickers is different also. When using the ticker "as is", tda-api returns the data and the "exchange" is "ind". 
+    So, this is how I can identify indexes
     
     The list contains tickers that have since dissapeared because M&A or delistings.
+    I have yet to find a way to get the data for those.
 """
 
-import os
 import polars as pl
 import psycopg2
 import pickle
-import config
 from tda.auth import easy_client
 from tda.client import Client
 from config import CONSUMER_KEY, REDIRECT_URI, JSON_PATH
@@ -112,10 +113,6 @@ def main():
     
     tickerlist = df['ticker'].unique().to_list()
     
-    # ticklist = tickerlist.iter_rows()   
-    # tickers = df['ticker'].to_list()
-    # tickers_string = ','.join(tickers)
-    
     cnxn = SQL_CONNECT()
     
     for i in range(0, len(tickerlist), 10):
@@ -130,20 +127,7 @@ def main():
         
         for key in r.json().keys():
             SQL_INSERT_TICKER_DETAILS(cnxn, r.json()[key])
-        
-        # if not bool(r.json()):
-        #     # the search failed. Try for an index
-        #     indexticker = '$'+ticker+'.X'
-        #     r = c.search_instruments(symbols=indexticker, projection=Client.Instrument.Projection.SYMBOL_SEARCH)
-        #     if not bool(r.json()):
-        #         # not an index either
-        #         # Leave it be, it will come out an "not done yet later"
-        #         pass
-        #     else:
-        #         pausefordebug=1
-        # else:
-        #     SQL_INSERT_TICKER_DETAILS(cnxn, r.json()[ticker])
-        
+                
         delay = 0.6 - (time.time() - start_time)
         if delay>0:
             time.sleep(delay)
