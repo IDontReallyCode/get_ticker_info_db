@@ -1,0 +1,1 @@
+E:\COMPUSTAT\dividends\dividends.csv
